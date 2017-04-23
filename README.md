@@ -11,3 +11,7 @@ Subscriber would subscribe a specific topic and receive messages belong to that 
 eventServices.
 
 You have to binding your jdk to zmq and zookeeper library before you run this sample.
+
+second commit:
+
+Simplify the code and fix some bugs. This time the eventService only have 2 threads and the local buffer has been removed. I let eventServices simply send messages from zookeeper node data, which has better performance
