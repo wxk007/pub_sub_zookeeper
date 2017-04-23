@@ -2,6 +2,7 @@
  * Created by wxk007 on 4/16/17.
  */
 import com.sun.jmx.remote.internal.ArrayQueue;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.zookeeper.*;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
@@ -84,7 +85,7 @@ public class eventService {
         //we're going to create a main node here, if there's not a main node already
         if(zk.exists("/main", false) == null){
             zk.create("/main", "".getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            }
+        }
         this.getPort = Integer.toString(getPort);
         this.sendPort = Integer.toString(sendPort);
         //this.topic = topic;
@@ -108,6 +109,7 @@ public class eventService {
         getSocket.subscribe("".getBytes());
 
 
+        int flag = 0;
         while(!Thread.currentThread().isInterrupted()){
             //String topic = getSocket.recvStr();
             byte[] curContent = getSocket.recv();
@@ -127,12 +129,23 @@ public class eventService {
                 String[] curNumber = curBuffer.split(";");
                 try {
                     int a = Integer.parseInt(curNumber[curNumber.length - 1]);
-                    if(a == 100) {
-                        a = 0;
+                   /* if(a % 1000 == 0) {
+                        //a = 0;
                         int size = curBuffer.length();
-                        curBuffer = curBuffer.substring(size/2, size);
+                        String newBuffer = curBuffer.substring(size/2, size);
+                        // System.out.print(newBuffer);
+                        String curNum = Integer.toString(a + 1);
+                        String curMes = newBuffer +content+ ";" + curNum + ";";
+                        //append the new message into the message set
+                        zk.setData("/main", curMes.getBytes(), -1);
 
                     }
+                    else{
+                        String curNum = Integer.toString(a + 1);
+                        String curMes = curBuffer +content+ ";" + curNum + ";";
+                        //append the new message into the message set
+                        zk.setData("/main", curMes.getBytes(), -1);
+                    }*/
                     String curNum = Integer.toString(a + 1);
                     String curMes = curBuffer +content+ ";" + curNum + ";";
                     //append the new message into the message set
@@ -179,20 +192,15 @@ public class eventService {
                 mHisCond.signalAll();
             mHisLock.unlock();
 
-        }
-
-    }
-
-    //this method is used to coordinate messages in buffer to the send queue and history queue,
-    //I used a new Thread here to improve the readability of my code
-    public void receiveFromBuffer() throws KeeperException, InterruptedException {
-        //flag is used to store the current position of the message we've read
-        int flag = 1;
-        while(!Thread.currentThread().isInterrupted()){
-            String curBuffer = new String(zk.getData("/main", false, null));
-            String[] zkQueue = curBuffer.split(";");
-            String content = zkQueue[zkQueue.length - 2];
-            String[] contentArray = content.split("/");
+            flag++;
+            String tempBuffer = new String(zk.getData("/main", false, null));
+            String[] zkQueue = tempBuffer.split(";");
+            //String content = "";
+            int positon = Arrays.binarySearch(zkQueue, Integer.toString(flag));
+            //that means the node has been deleted
+            if(positon < 0) continue;
+            String tempMessage = zkQueue[positon - 1];
+            String[] contentArray = tempMessage.split("/");
             message mMessage = new message(contentArray[0], contentArray[1]);
 
             mCurLock.lock();
@@ -204,7 +212,17 @@ public class eventService {
                     e.printStackTrace();
                 }
             }
-            mCurMessage.add(mMessage);
+            //Boolean flag = true;
+            Boolean isExist = true;
+            for(message item : mCurMessage){
+                if(item.getTopic().equals(mMessage.getTopic()) && item.getContent().equals(mMessage.getContent())){
+                    isExist = false;
+                }
+            }
+            //we can not add the element that already in the list into it
+            if(isExist){
+                mCurMessage.add(mMessage);
+            }
             //after you add it into the list, you have to signal up the waitting thread who is trying to get message from it
             mCurCond.signalAll();
             mCurLock.unlock();
@@ -224,9 +242,11 @@ public class eventService {
                 mHisCond.signalAll();
             mHisLock.unlock();
 
-
         }
+
     }
+    
+
 
     //send method is merely used to send current message, has nothing to do with history list
     public void send(){
