@@ -108,10 +108,10 @@ public class eventService {
     public void receive() throws KeeperException, InterruptedException {
         getSocket.subscribe("".getBytes());
 
-
         int flag = 0;
         while(!Thread.currentThread().isInterrupted()){
             //String topic = getSocket.recvStr();
+            //Thread.currentThread().
             byte[] curContent = getSocket.recv();
 
             //System.out.print("received");
@@ -158,145 +158,39 @@ public class eventService {
             content = content.replaceAll(" ","");
             String[] Message = content.split("/");
             System.out.println("received: " + Message[0] + " : " + Message[1]);
-            //try to write the information into the CurList
-            message curMessage = new message(Message[0],Message[1]);
-            mCurLock.lock();
-            //curMessage can only have one single message in it, guarentee it
-            while(mCurMessage.size() >= 10){
-                try {
-                    mCurCond.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            mCurMessage.add(curMessage);
-            //after you add it into the list, you have to signal up the waitting thread who is trying to get message from it
-            mCurCond.signalAll();
-            mCurLock.unlock();
+        }
 
-            mCurLock.lock();
+    }
 
-            //we should put the
-            mHisLock.lock();
-            //the history list can have no more than 5 messages
-            while(mHisList.size() >= 20){
-                try {
-                    mHisCond.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            mHisList.add(curMessage);
-            //signal the sending method if we've got enough history messages
-            if(mHisList.size() > 4)
-                mHisCond.signalAll();
-            mHisLock.unlock();
 
+    //send message from buffer
+    public void send() throws KeeperException, InterruptedException {
+        int flag = 0;
+        while(!Thread.currentThread().isInterrupted()){
             flag++;
             String tempBuffer = new String(zk.getData("/main", false, null));
             String[] zkQueue = tempBuffer.split(";");
             //String content = "";
-            int positon = Arrays.binarySearch(zkQueue, Integer.toString(flag));
+            int position = 0;
+            for(int i  = 0; i < zkQueue.length; i++){
+                if (zkQueue[i].equals(Integer.toString(flag))){
+                    position = i;
+                    break;
+                }
+            }
             //that means the node has been deleted
-            if(positon < 0) continue;
-            String tempMessage = zkQueue[positon - 1];
+            //if(positon < 0) continue;
+            if(position == 0) {
+                flag--;
+                continue;
+            }
+            String tempMessage = zkQueue[position - 1];
             String[] contentArray = tempMessage.split("/");
             message mMessage = new message(contentArray[0], contentArray[1]);
+            System.out.println("sending: " + mMessage.toString());
+            sendSocket.sendMore(mMessage.getTopic());
+            sendSocket.send(mMessage.getContent());
 
-            mCurLock.lock();
-            //curMessage can only have one single message in it, guarentee it
-            while(mCurMessage.size() >= 10){
-                try {
-                    mCurCond.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            //Boolean flag = true;
-            Boolean isExist = true;
-            for(message item : mCurMessage){
-                if(item.getTopic().equals(mMessage.getTopic()) && item.getContent().equals(mMessage.getContent())){
-                    isExist = false;
-                }
-            }
-            //we can not add the element that already in the list into it
-            if(isExist){
-                mCurMessage.add(mMessage);
-            }
-            //after you add it into the list, you have to signal up the waitting thread who is trying to get message from it
-            mCurCond.signalAll();
-            mCurLock.unlock();
-
-            mHisLock.lock();
-            //the history list can have no more than 5 messages
-            while(mHisList.size() >= 20){
-                try {
-                    mHisCond.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            mHisList.add(mMessage);
-            //signal the sending method if we've got enough history messages
-            if(mHisList.size() > 4)
-                mHisCond.signalAll();
-            mHisLock.unlock();
-
-        }
-
-    }
-    
-
-
-    //send method is merely used to send current message, has nothing to do with history list
-    public void send(){
-        while(!Thread.currentThread().isInterrupted()){
-            mCurLock.lock();
-            while (mCurMessage.size() < 10){
-                try {
-                    mCurCond.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.printf("We've got %d messages in current list, sending them \n", mCurMessage.size());
-            while (mCurMessage.size() != 0){
-                message tempMessage = mCurMessage.poll();
-                System.out.println("sending: " + tempMessage.toString());
-                sendSocket.sendMore(tempMessage.getTopic());
-                sendSocket.send(tempMessage.getContent());
-            }
-
-            if(mCurMessage.size() == 0)
-                mCurCond.signalAll();
-            mCurLock.unlock();
-        }
-
-    }
-
-    //this method is used to send history list towards subscribers
-    public void sendHistory(){
-        while(!Thread.currentThread().isInterrupted()){
-            mHisLock.lock();
-            while(mHisList.size() < 20){
-                try {
-                    mHisCond.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.printf("Sending history messages to subscriber, we've got %d messages in historylist \n", mHisList.size());
-            while(mHisList.size() != 0){
-                message tempMessage = mHisList.poll();
-                String historyTopic = tempMessage.getTopic();
-                String content = tempMessage.getContent() + ",history";
-                sendSocket.sendMore(historyTopic);
-                sendSocket.send(content);
-            }
-            //after sending history message, signal the waiting thread
-            if(mHisList.size() == 0)
-                mHisCond.signalAll();
-            mHisLock.unlock();
         }
     }
 

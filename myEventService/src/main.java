@@ -45,15 +45,8 @@ public class main {
         });
 
         Thread sendCurThread = new Thread(() ->{
-            mES.send();
-        });
-
-        Thread sendHisThread = new Thread(() -> {
-            mES.sendHistory();
-        });
-        Thread receiveFromZk = new Thread(() ->{
             try {
-                mES.receiveFromBuffer();
+                mES.send();
             } catch (KeeperException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -61,10 +54,23 @@ public class main {
             }
         });
 
+        /*Thread sendHisThread = new Thread(() -> {
+            mES.sendHistory();
+        });
+       /* Thread receiveFromZk = new Thread(() ->{
+            try {
+                mES.receiveFromBuffer();
+            } catch (KeeperException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });*/
+
 
         recCurThread.start();
         sendCurThread.start();
-        sendHisThread.start();
-        receiveFromZk.start();
+        //sendHisThread.start();
+        // receiveFromZk.start();
     }
 }
