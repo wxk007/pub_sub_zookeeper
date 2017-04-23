@@ -190,7 +190,25 @@ public class eventService {
             System.out.println("sending: " + mMessage.toString());
             sendSocket.sendMore(mMessage.getTopic());
             sendSocket.send(mMessage.getContent());
-
+            //try to send history if the flag number reaches 10
+            if(flag %10 == 0 && flag >= 10){
+                for(int i = 0; i <= 9; i++){
+                    position = 0;
+                    for(int j  = 0; j < zkQueue.length; j++){
+                        if (zkQueue[j].equals(Integer.toString(flag - i))){
+                            position = j;
+                            break;
+                        }
+                    }
+                    if(position != 0){
+                        String tempHis = zkQueue[position - 1];
+                        String[] hisArray = tempHis.split("/");
+                        sendSocket.sendMore(hisArray[0]);
+                        sendSocket.send(hisArray[1] + ",history");
+                        System.out.println("Sending History: " + hisArray[0] + " : " + hisArray[1]);
+                    }
+                }
+            }
         }
     }
 
