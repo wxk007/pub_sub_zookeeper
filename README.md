@@ -9,3 +9,5 @@ connected to each of them, it would be same.
 
 Subscriber would subscribe a specific topic and receive messages belong to that topic. Each subscriber can connect to any one of
 eventServices.
+
+You have to binding your jdk to zmq and zookeeper library before you run this sample.
