@@ -21,3 +21,12 @@ In this pattern, you should open several pub, sub, and eventservice programs in 
 In this project, because I implemented zookeeper pattern, so the subscriber can connect to any eventservice you want because they share the same message pool and send them at the same time. Messages would be stored in the pool.
 
 After created numbers of mininet enviornment, you can type javac pub.java, javac sub.java and javac eventService.java to run the subscriber, publisher and eventservice. Then type java pub, java sub and java eventService to run them. You could use the topology network we used in assignment1 and 2, or just run them on command line. If you ran multiple eventservice and multiple pub, you would notice that zookeeper is working.
+
+
+eventService
+TO run the code, you should put all the .jar pack in the zkLib dir, and do:
+javac -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar *.java
+Then do:
+java -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar: main
+
+the eventService could run then. You should replace the path with your own path
