@@ -15,3 +15,9 @@ You have to binding your jdk to zmq and zookeeper library before you run this sa
 second commit:
 
 Simplify the code and fix some bugs. This time the eventService only have 2 threads and the local buffer has been removed. I let eventServices simply send messages from zookeeper node data, which has better performance
+
+In this pattern, you should open several pub, sub, and eventservice programs in the network enviornment you want. In pub program, you should input the port number and topic name for each publisher; for each eventservice, you should input two port number, one for receive , one for receive, one for send. for each subscriber, you should input the port number and the topic you want to subscribe. Notice that each eventService could connect to any numbers of sub and pub you want, but each pub and sub can only connect to one eventservice. Then, the sub would print messages to the console so you can see what did it received.
+
+In this project, because I implemented zookeeper pattern, so the subscriber can connect to any eventservice you want because they share the same message pool and send them at the same time. Messages would be stored in the pool.
+
+After created numbers of mininet enviornment, you can type javac pub.java, javac sub.java and javac eventService.java to run the subscriber, publisher and eventservice. Then type java pub, java sub and java eventService to run them. You could use the topology network we used in assignment1 and 2, or just run them on command line. If you ran multiple eventservice and multiple pub, you would notice that zookeeper is working.
