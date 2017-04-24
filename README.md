@@ -22,6 +22,16 @@ In this project, because I implemented zookeeper pattern, so the subscriber can 
 
 After created numbers of mininet enviornment, you can type javac pub.java, javac sub.java and javac eventService.java to run the subscriber, publisher and eventservice. Then type java pub, java sub and java eventService to run them. You could use the topology network we used in assignment1 and 2, or just run them on command line. If you ran multiple eventservice and multiple pub, you would notice that zookeeper is working.
 
+First of all, you should establish zookeeper server. Do zkServer.sh start and then do sudo ./zkCli -server 127.0.0.1:2182.
+
+Make sure you've put all the jar package you need into the correct path
+
+pub
+To run pub, you should do
+javac -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar *.java
+then
+java -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar: pub
+
 
 eventService
 TO run the code, you should put all the .jar pack in the zkLib dir, and do:
@@ -32,3 +42,10 @@ Then do:
 java -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar: main
 
 the eventService could run then. You should replace the path with your own path
+
+sub:
+javac -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar *.java
+
+Then
+java -cp /home/wxk007/Documents/zkLib/zookeeper-3.4.6.jar:/home/wxk007/Documents/zkLib/jline-0.9.94.jar:/home/wxk007/Documents/zkLib/log4j-1.2.16.jar:/home/wxk007/Documents/zkLib/netty-3.7.0.Final.jar:/home/wxk007/Documents/zkLib/slf4j-api-1.6.1.jar:/home/wxk007/Documents/zkLib/slf4j-log4j12-1.6.1.jar:/home/wxk007/Documents/zkLib/zmq.jar: sub
+
