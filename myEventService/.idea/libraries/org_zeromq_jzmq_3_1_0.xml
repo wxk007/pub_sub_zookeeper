@@ -3,6 +3,7 @@
     <properties maven-id="org.zeromq:jzmq:3.1.0" />
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jzmq/3.1.0/jzmq-3.1.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jzmq/3.1.0/jzmq-3.1.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

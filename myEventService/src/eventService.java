@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
+import java.util.concurrent.locks.StampedLock;
 
 
 //the logic of my event service: it would create 3 threads, they are used for: receive message from pub, send current
@@ -75,6 +75,9 @@ public class eventService {
     private Context sendContext;
     private Socket sendSocket;
 
+    //add some synchronized mechanism to coordinate zookeeper
+    private StampedLock stampedLock;
+
     //getPort is used to set the port number that we used to get messages, sendPort is used to set the port number that
     //we used to send messages and isLeader is a flag that we could use it decided whether this object is going to be the
     //Leader(create main node) you should create leader firstly
@@ -99,6 +102,7 @@ public class eventService {
         getSocket = getContext.socket(ZMQ.SUB);
         sendContext = ZMQ.context(1);
         sendSocket = sendContext.socket(ZMQ.PUB);
+        this.stampedLock = new StampedLock();
 
         getSocket.bind("tcp://*:" + this.getPort);
 
@@ -117,43 +121,48 @@ public class eventService {
             //System.out.print("received");
             String content = new String(curContent);
 
-            //get current data from zookeeper and add the new one
-            String curBuffer = new String(zk.getData("/main", false, null));
-            //if there's no message in the buffer right now
-            if(curBuffer.length() == 0){
-                String temp = content + ";1;";
-                zk.setData("/main", temp.getBytes(), -1);
-            }
-            //else, append current message to the buffer and delete first half of it if the number of messages reach 100
-            else{
-                String[] curNumber = curBuffer.split(";");
-                try {
-                    int a = Integer.parseInt(curNumber[curNumber.length - 1]);
-                   /* if(a % 1000 == 0) {
-                        //a = 0;
-                        int size = curBuffer.length();
-                        String newBuffer = curBuffer.substring(size/2, size);
-                        // System.out.print(newBuffer);
-                        String curNum = Integer.toString(a + 1);
-                        String curMes = newBuffer +content+ ";" + curNum + ";";
-                        //append the new message into the message set
-                        zk.setData("/main", curMes.getBytes(), -1);
-
-                    }
-                    else{
-                        String curNum = Integer.toString(a + 1);
-                        String curMes = curBuffer +content+ ";" + curNum + ";";
-                        //append the new message into the message set
-                        zk.setData("/main", curMes.getBytes(), -1);
-                    }*/
-                    String curNum = Integer.toString(a + 1);
-                    String curMes = curBuffer +content+ ";" + curNum + ";";
-                    //append the new message into the message set
-                    zk.setData("/main", curMes.getBytes(), -1);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
+            long stamp = stampedLock.readLock();
+            String curBuffer;
+            try{
+                while(true){
+                    curBuffer = new String(zk.getData("/main", false, null));
+                    if(stampedLock.validate(stamp))
+                        break;
                 }
+
+                while(true){
+                    long ws = stampedLock.tryConvertToWriteLock(stamp);
+                    if(ws != 0L){
+                        //get current data from zookeeper and add the new one
+                        //if there's no message in the buffer right now
+                        stamp = ws;
+                        if(curBuffer.length() == 0){
+                            String temp = content + ";1;";
+                            zk.setData("/main", temp.getBytes(), -1);
+                        }
+                        //else, append current message to the buffer and delete first half of it if the number of messages reach 100
+                        else{
+                            String[] curNumber = curBuffer.split(";");
+                            try {
+                                int a = Integer.parseInt(curNumber[curNumber.length - 1]);
+                                String curNum = Integer.toString(a + 1);
+                                String curMes = curBuffer +content+ ";" + curNum + ";";
+                                //append the new message into the message set
+                                zk.setData("/main", curMes.getBytes(), -1);
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        break;
+                    }else {
+                        stampedLock.unlockRead(stamp);
+                        stamp = stampedLock.writeLock();
+                    }
+                }
+            }finally {
+                stampedLock.unlock(stamp);
             }
+
 
             content = content.replaceAll(" ","");
             String[] Message = content.split("/");
