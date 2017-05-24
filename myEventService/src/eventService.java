@@ -177,7 +177,18 @@ public class eventService {
         int flag = 0;
         while(!Thread.currentThread().isInterrupted()){
             flag++;
-            String tempBuffer = new String(zk.getData("/main", false, null));
+
+            long stamp = stampedLock.readLock();
+            String tempBuffer;
+            try{
+                while(true) {
+                    tempBuffer = new String(zk.getData("/main", false, null));
+                    if(stampedLock.validate(stamp))
+                        break;
+                }
+            }finally {
+                stampedLock.unlock(stamp);
+            }
             String[] zkQueue = tempBuffer.split(";");
             //String content = "";
             int position = 0;
